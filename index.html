@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI学科辅导助手</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- 顶部标题栏 -->
+    <header class="header">
+        <div class="header-content">
+            <h1 class="title">🎓 AI学科辅导助手</h1>
+            <div class="status-bar">
+                <span class="status-item">
+                    <span class="status-label">连接状态:</span>
+                    <span class="status-value" id="connection-status">未连接</span>
+                </span>
+                <span class="status-item">
+                    <span class="status-label">数字人状态:</span>
+                    <span class="status-value" id="avatar-state">--</span>
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主体内容区 -->
+    <main class="main-container">
+        <!-- 左侧数字人区域 -->
+        <section class="avatar-section">
+            <div class="avatar-container" id="avatar-container">
+                <div class="avatar-placeholder">
+                    <div class="placeholder-icon">👨‍🏫</div>
+                    <p class="placeholder-text">请配置密钥并连接AI老师</p>
+                </div>
+                <!-- 字幕显示区域 -->
+                <div class="subtitle-display" id="subtitle-display">
+                    <div class="subtitle-text" id="subtitle-text"></div>
+                    <div class="subtitle-progress" id="subtitle-progress"></div>
+                </div>
+            </div>
+            <div class="avatar-info">
+                <h3 id="teacher-name">AI辅导老师</h3>
+                <p id="teacher-desc">为您提供专业的学科辅导服务</p>
+            </div>
+        </section>
+
+        <!-- 右侧对话区域 -->
+        <section class="chat-section">
+            <!-- 学科选择 -->
+            <div class="subject-selector">
+                <button class="subject-btn active" data-subject="math">
+                    <span class="subject-icon">📐</span>
+                    <span>数学</span>
+                </button>
+                <button class="subject-btn" data-subject="chinese">
+                    <span class="subject-icon">📖</span>
+                    <span>语文</span>
+                </button>
+                <button class="subject-btn" data-subject="english">
+                    <span class="subject-icon">🔤</span>
+                    <span>英语</span>
+                </button>
+                <button class="subject-btn" data-subject="physics">
+                    <span class="subject-icon">⚛️</span>
+                    <span>物理</span>
+                </button>
+            </div>
+
+            <!-- 对话记录 -->
+            <div class="chat-messages" id="chat-messages">
+                <div class="message system">
+                    <div class="message-content">
+                        <p>👋 你好！我是AI学科辅导助手。</p>
+                        <p>我可以帮助你学习以下学科：</p>
+                        <ul>
+                            <li>📐 <strong>数学</strong> - 代数、几何、函数讲解</li>
+                            <li>📖 <strong>语文</strong> - 阅读、古诗文、作文指导</li>
+                            <li>🔤 <strong>英语</strong> - 语法、词汇、口语练习</li>
+                            <li>⚛️ <strong>物理</strong> - 概念、公式、实验讲解</li>
+                        </ul>
+                        <p>请选择学科，然后开始提问吧！</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 快捷问题 -->
+            <div class="quick-questions">
+                <span class="quick-label">⚡ 快捷问题：</span>
+                <div class="quick-buttons" id="quick-buttons">
+                    <button class="quick-btn">你好</button>
+                    <button class="quick-btn">今天学什么？</button>
+                    <button class="quick-btn">有什么学习建议？</button>
+                    <button class="quick-btn">如何提高成绩？</button>
+                </div>
+            </div>
+
+            <!-- 测试区域 -->
+            <div class="quick-questions">
+                <span class="quick-label">🔊 测试语音：</span>
+                <div class="quick-buttons">
+                    <button class="quick-btn" id="test-1" data-text="一二三">测试：一二三（3字）</button>
+                    <button class="quick-btn" id="test-2" data-text="一二三四五六七八九十">测试：一二三四五六七八九十（10字）</button>
+                    <button class="quick-btn" id="test-3" data-text="测试一二三四五六七八九十十一十二">测试：12个字</button>
+                    <button class="quick-btn" id="test-4" data-text="测试一二三四五六七八九十十一十二十三十四十五">测试：15个字</button>
+                </div>
+            </div>
+
+            <!-- 输入区域 -->
+            <div class="chat-input-area">
+                <textarea
+                    id="chat-input"
+                    class="chat-input"
+                    placeholder="请输入你的问题..."
+                    rows="2"
+                ></textarea>
+                <button id="send-btn" class="send-btn">提问</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- 底部控制栏 -->
+    <footer class="control-bar">
+        <div class="control-group">
+            <button id="connect-btn" class="btn btn-primary">
+                <span class="btn-icon">🔌</span>
+                连接AI老师
+            </button>
+            <button id="disconnect-btn" class="btn btn-secondary" disabled>
+                <span class="btn-icon">🔌</span>
+                断开连接
+            </button>
+        </div>
+        <div class="control-group">
+            <button id="settings-btn" class="btn btn-outline">
+                <span class="btn-icon">⚙️</span>
+                密钥配置
+            </button>
+            <button id="diagnose-btn" class="btn btn-outline">
+                <span class="btn-icon">🔍</span>
+                诊断
+            </button>
+            <button id="clear-btn" class="btn btn-outline">
+                <span class="btn-icon">🗑️</span>
+                清空记录
+            </button>
+        </div>
+    </footer>
+
+    <!-- 密钥配置弹窗 -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>密钥配置</h2>
+                <button class="modal-close" id="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="app-id">数字人 AppId *</label>
+                    <input
+                        type="text"
+                        id="app-id"
+                        class="form-input"
+                        placeholder="请输入魔珐星云AppId"
+                    >
+                </div>
+                <div class="form-group">
+                    <label for="app-secret">数字人 AppSecret *</label>
+                    <input
+                        type="password"
+                        id="app-secret"
+                        class="form-input"
+                        placeholder="请输入魔珐星云AppSecret"
+                    >
+                </div>
+                <div class="form-group">
+                    <label for="api-key">魔搭 API Key *</label>
+                    <input
+                        type="password"
+                        id="api-key"
+                        class="form-input"
+                        placeholder="请输入魔搭社区API Key"
+                    >
+                </div>
+                <div class="form-info">
+                    <p>💡 提示：密钥将保存在浏览器本地存储中，不会上传到任何服务器。</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="use-test-keys-btn" class="btn btn-outline">使用测试密钥</button>
+                <button id="save-keys-btn" class="btn btn-primary">保存配置</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 加载遮罩 -->
+    <div id="loading-overlay" class="loading-overlay hidden">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <p class="loading-text" id="loading-text">正在连接AI老师...</p>
+            <p class="loading-progress" id="loading-progress">0%</p>
+        </div>
+    </div>
+
+    <!-- SDK脚本 -->
+    <script src="https://media.xingyun3d.com/xingyun3d/general/litesdk/xmovAvatar@latest.js"></script>
+
+    <!-- 模块脚本 -->
+    <script src="js/config.js"></script>
+    <script src="js/avatar.js"></script>
+    <script src="js/ai.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
