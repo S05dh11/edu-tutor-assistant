@@ -375,33 +375,27 @@ const Avatar = {
         const queue = this.speakQueue[queueIndex];
         const chunk = queue.chunks[queue.currentChunk];
 
-        // 重要：每段都是独立的说话，所以都是 isStart=true, isEnd=true
-        // 但在第一段之后需要先切换状态
+        console.log(`播放第${queue.currentChunk + 1}/${queue.totalChunks}段: "${chunk.text}"`);
 
-        const playSegment = async () => {
-            console.log(`播放第${queue.currentChunk + 1}/${queue.totalChunks}段: "${chunk.text}"`);
-
-            // 显示字幕
-            UI.showSubtitle(chunk.text, queue.currentChunk, queue.totalChunks);
-
-            // 播放（每段都是独立的，doSpeak内部会处理状态切换）
-            await this.doSpeak(chunk.text, true, true);
-
-            // 更新计数
-            queue.currentChunk++;
-            console.log('计数已更新:', queue.currentChunk);
-        };
+        // 显示字幕
+        UI.showSubtitle(chunk.text, queue.currentChunk, queue.totalChunks);
 
         // 如果不是第一段，先切换到listen状态
         if (queue.currentChunk > 0) {
             console.log('切换到listen状态准备播放下一段');
             this.sdk.listen();
-            setTimeout(() => {
-                playSegment();
-            }, 1000);
-        } else {
-            await playSegment();
+            await this.sleep(300);
         }
+
+        // 播放当前段
+        await this.doSpeak(chunk.text, true, true);
+
+        // 更新计数
+        queue.currentChunk++;
+        console.log('计数已更新:', queue.currentChunk);
+
+        // 注意：不要在这里调用playNextInQueue()
+        // 下一段会在SDK的onVoiceStateChange回调中触发
     },
 
     /**

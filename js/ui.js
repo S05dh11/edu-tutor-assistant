@@ -35,6 +35,7 @@ const UI = {
             // 状态显示
             connectionStatus: document.getElementById('connection-status'),
             avatarState: document.getElementById('avatar-state'),
+            aiMode: document.getElementById('ai-mode'),
 
             // 按钮
             connectBtn: document.getElementById('connect-btn'),
@@ -43,6 +44,8 @@ const UI = {
             diagnoseBtn: document.getElementById('diagnose-btn'),
             clearBtn: document.getElementById('clear-btn'),
             sendBtn: document.getElementById('send-btn'),
+            toggleModeBtn: document.getElementById('toggle-mode-btn'),
+            knowledgeBtn: document.getElementById('knowledge-btn'),
 
             // 输入框
             chatInput: document.getElementById('chat-input'),
@@ -61,6 +64,19 @@ const UI = {
             modalClose: document.getElementById('modal-close'),
             saveKeysBtn: document.getElementById('save-keys-btn'),
             useTestKeysBtn: document.getElementById('use-test-keys-btn'),
+
+            // 知识库弹窗
+            knowledgeModal: document.getElementById('knowledge-modal'),
+            knowledgeModalClose: document.getElementById('knowledge-modal-close'),
+            knowledgeList: document.getElementById('knowledge-list'),
+            addTopicBtn: document.getElementById('add-topic-btn'),
+            closeKnowledgeBtn: document.getElementById('close-knowledge-btn'),
+            knowledgeTabs: document.querySelectorAll('.knowledge-tab'),
+
+            // Agent面板
+            agentPanelToggle: document.getElementById('agent-panel-toggle'),
+            agentPanelContent: document.getElementById('agent-panel-content'),
+            agentLog: document.getElementById('agent-log'),
 
             // 加载遮罩
             loadingOverlay: document.getElementById('loading-overlay'),
@@ -96,6 +112,16 @@ const UI = {
         // 断开按钮
         el.disconnectBtn.addEventListener('click', () => {
             Avatar.disconnect();
+        });
+
+        // AI模式切换按钮
+        el.toggleModeBtn?.addEventListener('click', () => {
+            this.toggleAIMode();
+        });
+
+        // 知识库按钮
+        el.knowledgeBtn?.addEventListener('click', () => {
+            this.showKnowledgeModal();
         });
 
         // 设置按钮
@@ -147,6 +173,36 @@ const UI = {
         el.useTestKeysBtn.addEventListener('click', () => {
             this.handleUseTestKeys();
         });
+
+        // 知识库弹窗相关
+        el.knowledgeModalClose?.addEventListener('click', () => {
+            this.hideKnowledgeModal();
+        });
+
+        el.knowledgeModal?.addEventListener('click', (e) => {
+            if (e.target === el.knowledgeModal) {
+                this.hideKnowledgeModal();
+            }
+        });
+
+        el.closeKnowledgeBtn?.addEventListener('click', () => {
+            this.hideKnowledgeModal();
+        });
+
+        // 知识库学科切换
+        el.knowledgeTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                this.switchKnowledgeTab(tab.dataset.subject);
+            });
+        });
+
+        // Agent面板切换
+        el.agentPanelToggle?.addEventListener('click', () => {
+            this.toggleAgentPanel();
+        });
+
+        // 初始化AI模式显示
+        this.updateAIModeDisplay();
     },
 
     /**
@@ -270,7 +326,8 @@ const UI = {
         // 不需要切换状态，保持当前状态
         // 获取AI回复
         const config = Config.getAll();
-        let assistantMessage = '';
+        let assistantMessage = '';      // 显示在UI上的完整消息（包含系统消息）
+        let speakMessage = '';           // 用于朗读的消息（过滤掉系统消息）
         let messageElement = null;
 
         // 添加助手消息占位
@@ -280,8 +337,12 @@ const UI = {
             message,
             config.apiKey,
             // onMessage - 流式接收消息，只更新UI
-            (chunk) => {
+            (chunk, isSystemMessage = false) => {
                 assistantMessage += chunk;
+                // 只将非系统消息添加到朗读内容中
+                if (!isSystemMessage && !chunk.startsWith('[系统:')) {
+                    speakMessage += chunk;
+                }
                 this.updateMessage(messageElement, assistantMessage);
                 // 不在这里调用speak，等待完整回复后再说
             },
@@ -290,15 +351,15 @@ const UI = {
                 assistantMessage = fullMessage;
                 this.updateMessage(messageElement, assistantMessage);
 
-                // 等AI完整回复后，让数字人说一遍
-                if (Avatar.isConnected() && assistantMessage) {
-                    console.log('AI回复完成，开始播放语音:', assistantMessage);
+                // 等AI完整回复后，让数字人说一遍（只朗读过滤后的内容）
+                if (Avatar.isConnected() && speakMessage) {
+                    console.log('AI回复完成，开始播放语音:', speakMessage);
 
                     // 直接调用speak，不需要先切换idle状态
                     // SDK会自动处理状态切换
                     setTimeout(() => {
-                        console.log('开始说话，文本长度:', assistantMessage.length);
-                        Avatar.speak(assistantMessage, true, true);
+                        console.log('开始说话，文本长度:', speakMessage.length);
+                        Avatar.speak(speakMessage, true, true);
                     }, 300);
                 }
 
@@ -586,5 +647,184 @@ const UI = {
         this.elements.subtitleDisplay.style.display = 'none';
         this.elements.subtitleText.textContent = '';
         this.elements.subtitleProgress.innerHTML = '';
+    },
+
+    // ========== RAG + Multi-Agent 增强功能 ==========
+
+    /**
+     * 切换AI模式
+     */
+    toggleAIMode() {
+        const currentMode = AI.getAgentMode();
+        AI.setAgentMode(!currentMode);
+        this.updateAIModeDisplay();
+        this.showSuccess(!currentMode ? '已切换至Multi-Agent增强模式' : '已切换至基础模式');
+    },
+
+    /**
+     * 更新AI模式显示
+     */
+    updateAIModeDisplay() {
+        const mode = AI.getAgentMode();
+        if (this.elements.aiMode) {
+            this.elements.aiMode.textContent = mode ? 'Multi-Agent' : '基础';
+        }
+    },
+
+    /**
+     * 显示知识库弹窗
+     */
+    showKnowledgeModal() {
+        const el = this.elements;
+        el.knowledgeModal.classList.add('show');
+        // 加载当前学科的知识库
+        this.switchKnowledgeTab(AI.getCurrentSubject());
+    },
+
+    /**
+     * 隐藏知识库弹窗
+     */
+    hideKnowledgeModal() {
+        this.elements.knowledgeModal.classList.remove('show');
+    },
+
+    /**
+     * 切换知识库学科标签
+     */
+    switchKnowledgeTab(subject) {
+        const el = this.elements;
+
+        // 更新标签激活状态
+        el.knowledgeTabs.forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.subject === subject);
+        });
+
+        // 加载知识库内容
+        this.renderKnowledgeList(subject);
+    },
+
+    /**
+     * 渲染知识库列表
+     */
+    renderKnowledgeList(subject) {
+        const topics = KnowledgeBase.getTopicsBySubject(subject);
+        const el = this.elements.knowledgeList;
+
+        if (!topics || topics.all.length === 0) {
+            el.innerHTML = '<div class="knowledge-empty">该学科暂无知识点</div>';
+            return;
+        }
+
+        let html = '';
+
+        // 内置知识点
+        if (topics.builtin.length > 0) {
+            html += '<h4 style="margin: 16px 0 12px; color: var(--text-secondary);">内置知识库</h4>';
+            topics.builtin.forEach(topic => {
+                html += this.renderKnowledgeItem(topic, 'builtin');
+            });
+        }
+
+        // 自定义知识点
+        if (topics.custom.length > 0) {
+            html += '<h4 style="margin: 16px 0 12px; color: var(--text-secondary);">自定义知识点</h4>';
+            topics.custom.forEach(topic => {
+                html += this.renderKnowledgeItem(topic, 'custom');
+            });
+        }
+
+        el.innerHTML = html;
+    },
+
+    /**
+     * 渲染单个知识点
+     */
+    renderKnowledgeItem(topic, source) {
+        const keywordsHtml = topic.keywords.map(kw =>
+            `<span class="knowledge-keyword">${kw}</span>`
+        ).join('');
+
+        return `
+            <div class="knowledge-item">
+                <div class="knowledge-item-header">
+                    <span class="knowledge-item-title">${topic.title}</span>
+                    <span class="knowledge-item-source ${source === 'custom' ? 'custom' : ''}">
+                        ${source === 'custom' ? '自定义' : '内置'}
+                    </span>
+                </div>
+                <div class="knowledge-item-keywords">${keywordsHtml}</div>
+                <div class="knowledge-item-content">${topic.content}</div>
+            </div>
+        `;
+    },
+
+    /**
+     * 切换Agent面板显示状态
+     */
+    toggleAgentPanel() {
+        const el = this.elements;
+        const isCollapsed = el.agentPanelContent.classList.contains('collapsed');
+
+        if (isCollapsed) {
+            el.agentPanelContent.classList.remove('collapsed');
+            el.agentPanelToggle.textContent = '收起';
+        } else {
+            el.agentPanelContent.classList.add('collapsed');
+            el.agentPanelToggle.textContent = '展开';
+        }
+    },
+
+    /**
+     * 更新Agent状态卡片
+     */
+    updateAgentCard(agentId, status, statusText) {
+        const card = document.getElementById(`agent-${agentId}`);
+        if (!card) return;
+
+        const statusEl = card.querySelector('.agent-status');
+
+        if (status === 'active') {
+            card.classList.add('active');
+            statusEl.textContent = statusText || '工作中';
+        } else {
+            card.classList.remove('active');
+            statusEl.textContent = statusText || '待命';
+        }
+    },
+
+    /**
+     * 添加Agent日志
+     */
+    addAgentLog(agentId, action) {
+        const el = this.elements.agentLog;
+        if (!el) return;
+
+        const agentInfo = AgentSystem.getAgentInfo(agentId);
+        const timestamp = new Date().toLocaleTimeString();
+
+        const logEntry = document.createElement('div');
+        logEntry.className = 'log-entry';
+        logEntry.innerHTML = `
+            <span class="timestamp">${timestamp}</span>
+            <span class="agent">${agentInfo?.icon || ''} ${agentInfo?.name || agentId}</span>
+            <span class="action">${action}</span>
+        `;
+
+        el.insertBefore(logEntry, el.firstChild);
+
+        // 限制日志条数
+        while (el.children.length > 20) {
+            el.removeChild(el.lastChild);
+        }
+    },
+
+    /**
+     * 重置所有Agent状态
+     */
+    resetAllAgents() {
+        const agentIds = ['retriever', 'analyzer', 'designer', 'generator', 'validator'];
+        agentIds.forEach(id => {
+            this.updateAgentCard(id, 'idle', '待命');
+        });
     }
 };

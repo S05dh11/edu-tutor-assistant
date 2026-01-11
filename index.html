@@ -10,7 +10,7 @@
     <!-- 顶部标题栏 -->
     <header class="header">
         <div class="header-content">
-            <h1 class="title">🎓 AI学科辅导助手</h1>
+            <h1 class="title">🎓 AI学科辅导助手 <span class="badge">RAG+Multi-Agent</span></h1>
             <div class="status-bar">
                 <span class="status-item">
                     <span class="status-label">连接状态:</span>
@@ -19,6 +19,10 @@
                 <span class="status-item">
                     <span class="status-label">数字人状态:</span>
                     <span class="status-value" id="avatar-state">--</span>
+                </span>
+                <span class="status-item">
+                    <span class="status-label">AI模式:</span>
+                    <span class="status-value" id="ai-mode">Multi-Agent</span>
                 </span>
             </div>
         </div>
@@ -42,6 +46,47 @@
             <div class="avatar-info">
                 <h3 id="teacher-name">AI辅导老师</h3>
                 <p id="teacher-desc">为您提供专业的学科辅导服务</p>
+            </div>
+
+            <!-- Agent状态显示面板 -->
+            <div class="agent-panel">
+                <div class="agent-panel-header">
+                    <span class="agent-panel-title">🤖 Multi-Agent协作状态</span>
+                    <button class="agent-panel-toggle" id="agent-panel-toggle">收起</button>
+                </div>
+                <div class="agent-panel-content" id="agent-panel-content">
+                    <div class="agent-grid">
+                        <div class="agent-card" id="agent-retriever">
+                            <div class="agent-icon">🔍</div>
+                            <div class="agent-name">检索Agent</div>
+                            <div class="agent-status">待命</div>
+                        </div>
+                        <div class="agent-card" id="agent-analyzer">
+                            <div class="agent-icon">🧠</div>
+                            <div class="agent-name">分析Agent</div>
+                            <div class="agent-status">待命</div>
+                        </div>
+                        <div class="agent-card" id="agent-designer">
+                            <div class="agent-icon">📋</div>
+                            <div class="agent-name">设计Agent</div>
+                            <div class="agent-status">待命</div>
+                        </div>
+                        <div class="agent-card" id="agent-generator">
+                            <div class="agent-icon">✏️</div>
+                            <div class="agent-name">生成Agent</div>
+                            <div class="agent-status">待命</div>
+                        </div>
+                        <div class="agent-card" id="agent-validator">
+                            <div class="agent-icon">✅</div>
+                            <div class="agent-name">验证Agent</div>
+                            <div class="agent-status">待命</div>
+                        </div>
+                    </div>
+                    <!-- Agent处理日志 -->
+                    <div class="agent-log" id="agent-log">
+                        <div class="log-entry">等待问题输入...</div>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -132,6 +177,14 @@
             </button>
         </div>
         <div class="control-group">
+            <button id="toggle-mode-btn" class="btn btn-outline">
+                <span class="btn-icon">🔄</span>
+                切换AI模式
+            </button>
+            <button id="knowledge-btn" class="btn btn-outline">
+                <span class="btn-icon">📚</span>
+                知识库
+            </button>
             <button id="settings-btn" class="btn btn-outline">
                 <span class="btn-icon">⚙️</span>
                 密钥配置
@@ -193,6 +246,31 @@
         </div>
     </div>
 
+    <!-- 知识库查看弹窗 -->
+    <div id="knowledge-modal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>📚 知识库管理</h2>
+                <button class="modal-close" id="knowledge-modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="knowledge-tabs">
+                    <button class="knowledge-tab active" data-subject="math">数学</button>
+                    <button class="knowledge-tab" data-subject="chinese">语文</button>
+                    <button class="knowledge-tab" data-subject="english">英语</button>
+                    <button class="knowledge-tab" data-subject="physics">物理</button>
+                </div>
+                <div class="knowledge-list" id="knowledge-list">
+                    <!-- 知识点列表将动态生成 -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="add-topic-btn" class="btn btn-primary">添加知识点</button>
+                <button id="close-knowledge-btn" class="btn btn-outline">关闭</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 加载遮罩 -->
     <div id="loading-overlay" class="loading-overlay hidden">
         <div class="loading-content">
@@ -207,6 +285,8 @@
 
     <!-- 模块脚本 -->
     <script src="js/config.js"></script>
+    <script src="js/knowledge.js"></script>
+    <script src="js/agents.js"></script>
     <script src="js/avatar.js"></script>
     <script src="js/ai.js"></script>
     <script src="js/ui.js"></script>
