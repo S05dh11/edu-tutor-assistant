@@ -92,24 +92,45 @@
 
         <!-- 右侧对话区域 -->
         <section class="chat-section">
-            <!-- 学科选择 -->
-            <div class="subject-selector">
-                <button class="subject-btn active" data-subject="math">
-                    <span class="subject-icon">📐</span>
-                    <span>数学</span>
-                </button>
-                <button class="subject-btn" data-subject="chinese">
-                    <span class="subject-icon">📖</span>
-                    <span>语文</span>
-                </button>
-                <button class="subject-btn" data-subject="english">
-                    <span class="subject-icon">🔤</span>
-                    <span>英语</span>
-                </button>
-                <button class="subject-btn" data-subject="physics">
-                    <span class="subject-icon">⚛️</span>
-                    <span>物理</span>
-                </button>
+            <!-- 选择器区域：场景和学科合并 -->
+            <div class="selector-section">
+                <div class="selector-row">
+                    <div class="selector-label">🎯 场景</div>
+                    <div class="scenario-buttons-compact" id="scenario-buttons">
+                        <button class="scenario-btn-compact active" data-scenario="teaching" title="教育教学">
+                            📚 教学
+                        </button>
+                        <button class="scenario-btn-compact" data-scenario="training" title="培训演练">
+                            📝 培训
+                        </button>
+                        <button class="scenario-btn-compact" data-scenario="assessment" title="考核测试">
+                            📋 考核
+                        </button>
+                        <button class="scenario-btn-compact" data-scenario="evaluation" title="学习评估">
+                            📊 评估
+                        </button>
+                        <button class="scenario-btn-compact" data-scenario="speaking" title="口语陪练">
+                            🗣️ 口语
+                        </button>
+                    </div>
+                </div>
+                <div class="selector-row">
+                    <div class="selector-label">📚 学科</div>
+                    <div class="subject-buttons-compact" id="subject-buttons">
+                        <button class="subject-btn-compact active" data-subject="math" title="数学">
+                            📐 数学
+                        </button>
+                        <button class="subject-btn-compact" data-subject="chinese" title="语文">
+                            📖 语文
+                        </button>
+                        <button class="subject-btn-compact" data-subject="english" title="英语">
+                            🔤 英语
+                        </button>
+                        <button class="subject-btn-compact" data-subject="physics" title="物理">
+                            ⚛️ 物理
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <!-- 对话记录 -->
@@ -124,30 +145,30 @@
                             <li>🔤 <strong>英语</strong> - 语法、词汇、口语练习</li>
                             <li>⚛️ <strong>物理</strong> - 概念、公式、实验讲解</li>
                         </ul>
-                        <p>请选择学科，然后开始提问吧！</p>
+                        <p>💡 <strong>使用提示</strong>：先选择场景和学科，然后点击快捷问题或输入你的问题开始学习！</p>
                     </div>
                 </div>
             </div>
 
-            <!-- 快捷问题 -->
-            <div class="quick-questions">
-                <span class="quick-label">⚡ 快捷问题：</span>
-                <div class="quick-buttons" id="quick-buttons">
-                    <button class="quick-btn">你好</button>
-                    <button class="quick-btn">今天学什么？</button>
-                    <button class="quick-btn">有什么学习建议？</button>
-                    <button class="quick-btn">如何提高成绩？</button>
+            <!-- 快捷问题和测试区域合并 -->
+            <div class="quick-section">
+                <div class="quick-questions-compact">
+                    <span class="quick-label">⚡ 快捷问题</span>
+                    <div class="quick-buttons" id="quick-buttons">
+                        <button class="quick-btn">你好</button>
+                        <button class="quick-btn">今天学什么？</button>
+                        <button class="quick-btn">有什么学习建议？</button>
+                        <button class="quick-btn">如何提高成绩？</button>
+                    </div>
                 </div>
-            </div>
-
-            <!-- 测试区域 -->
-            <div class="quick-questions">
-                <span class="quick-label">🔊 测试语音：</span>
-                <div class="quick-buttons">
-                    <button class="quick-btn" id="test-1" data-text="一二三">测试：一二三（3字）</button>
-                    <button class="quick-btn" id="test-2" data-text="一二三四五六七八九十">测试：一二三四五六七八九十（10字）</button>
-                    <button class="quick-btn" id="test-3" data-text="测试一二三四五六七八九十十一十二">测试：12个字</button>
-                    <button class="quick-btn" id="test-4" data-text="测试一二三四五六七八九十十一十二十三十四十五">测试：15个字</button>
+                <div class="quick-questions-compact">
+                    <span class="quick-label">🔊 语音测试</span>
+                    <div class="quick-buttons">
+                        <button class="quick-btn test-btn" id="test-1" data-text="一二三">3字</button>
+                        <button class="quick-btn test-btn" id="test-2" data-text="一二三四五六七八九十">10字</button>
+                        <button class="quick-btn test-btn" id="test-3" data-text="测试一二三四五六七八九十十一十二">12字</button>
+                        <button class="quick-btn test-btn" id="test-4" data-text="测试一二三四五六七八九十十一十二十三十四十五">15字</button>
+                    </div>
                 </div>
             </div>
 
@@ -286,6 +307,7 @@
     <!-- 模块脚本 -->
     <script src="js/config.js"></script>
     <script src="js/knowledge.js"></script>
+    <script src="js/scenario.js"></script>
     <script src="js/agents.js"></script>
     <script src="js/avatar.js"></script>
     <script src="js/ai.js"></script>

@@ -394,7 +394,9 @@ const AgentSystem = {
      * 构建增强提示词
      */
     buildEnhancedPrompt(subject, knowledgeContext, strategy, structure) {
-        let prompt = AI.SUBJECT_PROMPTS[subject] || AI.SUBJECT_PROMPTS.math;
+        // 获取场景提示词
+        const scenarioPrompt = Scenario.getCurrentPrompt();
+        let prompt = scenarioPrompt + '\n\n' + (AI.SUBJECT_PROMPTS[subject] || AI.SUBJECT_PROMPTS.math);
 
         // 添加知识库上下文
         if (knowledgeContext) {
@@ -410,8 +412,7 @@ const AgentSystem = {
         prompt += `\n\n【准确性要求】
 - 必须基于上述知识库内容回答
 - 如知识库中没有相关内容，请明确说明
-- 不要编造不确定的信息
-- 回答要简洁准确（50字以内）`;
+- 不要编造不确定的信息`;
 
         return prompt;
     },

@@ -125,7 +125,12 @@ const AI = {
      * 基础对话模式（原有实现）
      */
     async chatBasic(userMessage, apiKey, onMessage, onComplete, onError) {
-        const systemPrompt = this.SUBJECT_PROMPTS[this.currentSubject] || this.SUBJECT_PROMPTS.math;
+        // 获取场景提示词
+        const scenarioPrompt = Scenario.getCurrentPrompt();
+        const subjectPrompt = this.SUBJECT_PROMPTS[this.currentSubject] || this.SUBJECT_PROMPTS.math;
+
+        // 合并场景和学科提示词
+        let systemPrompt = scenarioPrompt + '\n\n' + subjectPrompt;
 
         // 尝试从知识库检索相关内容增强提示词
         const relevantTopics = KnowledgeBase.search(userMessage, this.currentSubject);

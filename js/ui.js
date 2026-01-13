@@ -17,6 +17,9 @@ const UI = {
         // 绑定事件
         this.bindEvents();
 
+        // 初始化场景按钮
+        this.initScenarioButtons();
+
         // 初始化学科按钮
         this.initSubjectButtons();
 
@@ -25,6 +28,9 @@ const UI = {
 
         // 初始化密钥配置表单
         Config.initForm();
+
+        // 初始化快捷问题按钮状态（未连接时禁用）
+        this.updateQuickQuestionsState();
     },
 
     /**
@@ -206,13 +212,38 @@ const UI = {
     },
 
     /**
+     * 初始化场景按钮
+     */
+    initScenarioButtons() {
+        const scenarioBtns = document.querySelectorAll('.scenario-btn-compact');
+        scenarioBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // 移除所有active类
+                scenarioBtns.forEach(b => b.classList.remove('active'));
+                // 添加active类到当前按钮
+                btn.classList.add('active');
+                // 切换场景
+                const scenario = btn.dataset.scenario;
+                Scenario.setCurrentScenario(scenario);
+                // 更新快捷问题
+                this.updateQuickQuestions();
+                // 显示场景切换提示
+                const scenarioInfo = Scenario.getScenario(scenario);
+                this.showSuccess(`已切换到${scenarioInfo.name}场景`);
+            });
+        });
+    },
+
+    /**
      * 初始化学科按钮
      */
     initSubjectButtons() {
-        this.elements.subjectBtns.forEach(btn => {
+        // 支持旧的subject-btn和新的subject-btn-compact
+        const subjectBtns = document.querySelectorAll('.subject-btn, .subject-btn-compact');
+        subjectBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 // 移除所有active类
-                this.elements.subjectBtns.forEach(b => b.classList.remove('active'));
+                subjectBtns.forEach(b => b.classList.remove('active'));
                 // 添加active类到当前按钮
                 btn.classList.add('active');
                 // 切换学科
@@ -228,7 +259,8 @@ const UI = {
      * 更新快捷问题按钮
      */
     updateQuickQuestions() {
-        const questions = AI.getQuickQuestions();
+        // 优先使用场景的快捷问题
+        const questions = Scenario.getCurrentQuickQuestions();
         this.elements.quickButtons.innerHTML = questions.map(q =>
             `<button class="quick-btn">${q}</button>`
         ).join('');
@@ -236,25 +268,59 @@ const UI = {
         // 绑定快捷问题点击事件
         this.elements.quickButtons.querySelectorAll('.quick-btn').forEach(btn => {
             btn.addEventListener('click', () => {
+                // 检查是否已连接
+                if (!Avatar.isConnected()) {
+                    this.showError('请先连接AI老师');
+                    return;
+                }
                 this.elements.chatInput.value = btn.textContent;
                 this.handleSendMessage();
             });
         });
+
+        // 根据连接状态更新按钮禁用状态
+        this.updateQuickQuestionsState();
 
         // 绑定测试按钮事件
         ['test-1', 'test-2', 'test-3', 'test-4'].forEach(id => {
             const btn = document.getElementById(id);
             if (btn) {
                 btn.addEventListener('click', () => {
-                    const text = btn.getAttribute('data-text');
-                    if (Avatar.isConnected()) {
-                        console.log('测试语音:', text);
-                        Avatar.speak(text, true, true);
-                    } else {
+                    // 检查是否已连接
+                    if (!Avatar.isConnected()) {
                         this.showError('请先连接AI老师');
+                        return;
                     }
+                    const text = btn.getAttribute('data-text');
+                    console.log('测试语音:', text);
+                    Avatar.speak(text, true, true);
                 });
             }
+        });
+    },
+
+    /**
+     * 根据连接状态更新快捷问题按钮状态
+     */
+    updateQuickQuestionsState() {
+        const isConnected = Avatar.isConnected();
+        const allQuickBtns = this.elements.quickButtons.querySelectorAll('.quick-btn');
+        const allTestBtns = ['test-1', 'test-2', 'test-3', 'test-4']
+            .map(id => document.getElementById(id))
+            .filter(btn => btn !== null);
+
+        // 更新快捷问题按钮
+        allQuickBtns.forEach(btn => {
+            btn.disabled = !isConnected;
+            btn.style.opacity = isConnected ? '1' : '0.5';
+            btn.style.cursor = isConnected ? 'pointer' : 'not-allowed';
+        });
+
+        // 更新测试按钮
+        allTestBtns.forEach(btn => {
+            btn.disabled = !isConnected;
+            btn.style.opacity = isConnected ? '1' : '0.5';
+            btn.style.cursor = isConnected ? 'pointer' : 'not-allowed';
         });
     },
 
@@ -487,18 +553,24 @@ const UI = {
                 el.textContent = '已连接';
                 this.elements.connectBtn.disabled = true;
                 this.elements.disconnectBtn.disabled = false;
+                // 更新快捷问题按钮状态
+                this.updateQuickQuestionsState();
                 break;
             case 'connecting':
                 el.classList.add('connecting');
                 el.textContent = '连接中...';
                 this.elements.connectBtn.disabled = true;
                 this.elements.disconnectBtn.disabled = true;
+                // 连接中禁用所有按钮
+                this.updateQuickQuestionsState();
                 break;
             case 'disconnected':
                 el.classList.add('disconnected');
                 el.textContent = '未连接';
                 this.elements.connectBtn.disabled = false;
                 this.elements.disconnectBtn.disabled = true;
+                // 更新快捷问题按钮状态
+                this.updateQuickQuestionsState();
                 break;
         }
     },

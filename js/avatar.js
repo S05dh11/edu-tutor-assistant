@@ -21,6 +21,33 @@ const Avatar = {
     // 服务地址
     GATEWAY_SERVER: 'https://nebula-agent.xingyun3d.com/user/v1/ttsa/session',
 
+    // 数字转中文映射
+    numberToChinese: {
+        '0': '零', '1': '一', '2': '二', '3': '三', '4': '四',
+        '5': '五', '6': '六', '7': '七', '8': '八', '9': '九',
+        '10': '十', '11': '十一', '12': '十二', '13': '十三', '14': '十四',
+        '15': '十五', '16': '十六', '17': '十七', '18': '十八', '19': '十九',
+        '20': '二十', '30': '三十', '40': '四十', '50': '五十',
+        '60': '六十', '70': '七十', '80': '八十', '90': '九十',
+        '100': '一百', '1000': '一千', '10000': '一万'
+    },
+
+    // 字母转中文拼音映射
+    letterToChinese: {
+        'a': '阿', 'b': '波', 'c': '呲', 'd': '嘚', 'e': '鹅',
+        'f': '佛', 'g': '哥', 'h': '喝', 'i': '衣', 'j': '机',
+        'k': '科', 'l': '勒', 'm': '摸', 'n': '讷', 'o': '喔',
+        'p': '坡', 'q': '欺', 'r': '日', 's': '思', 't': '特',
+        'u': '乌', 'v': '维', 'w': '乌', 'x': '西', 'y': '衣',
+        'z': '资',
+        'A': '阿', 'B': '波', 'C': '呲', 'D': '嘚', 'E': '鹅',
+        'F': '佛', 'G': '哥', 'H': '喝', 'I': '衣', 'J': '机',
+        'K': '科', 'L': '勒', 'M': '摸', 'N': '讷', 'O': '喔',
+        'P': '坡', 'Q': '欺', 'R': '日', 'S': '思', 'T': '特',
+        'U': '乌', 'V': '维', 'W': '乌', 'X': '西', 'Y': '衣',
+        'Z': '资'
+    },
+
     /**
      * 诊断检查
      */
@@ -133,17 +160,17 @@ const Avatar = {
 
                 // 语音播放状态回调
                 onVoiceStateChange: (status) => {
-                    console.log('Voice State:', status);
+                    console.log('Voice State:', status, '队列状态:', this.isPlayingQueue, '队列数:', this.speakQueue.length);
 
                     // 语音结束 - 播放下一段（注意：SDK传入的是 'end' 不是 'voice_end'）
                     if (status === 'end') {
-                        console.log('收到语音结束事件');
+                        console.log('✅ 收到语音结束事件，准备播放下一段');
                         if (this.isPlayingQueue && this.speakQueue.length > 0) {
-                            // 延迟一点再播放下一段
+                            // 延迟再播放下一段，确保完全播放完成
                             setTimeout(() => {
-                                console.log('准备播放下一段...');
+                                console.log('⏭️ 调用playNextInQueue...');
                                 this.playNextInQueue();
-                            }, 800);
+                            }, 1000); // 增加延迟到1000ms
                         } else {
                             console.log('队列为空或未在播放队列');
                         }
@@ -302,6 +329,14 @@ const Avatar = {
             return;
         }
 
+        // 先预处理文本，将数字和字母转换为中文
+        text = this.preprocessText(text);
+
+        if (!text || text.trim() === '') {
+            console.warn('预处理后文本为空，无法说话');
+            return;
+        }
+
         // 文本长度限制（30字以内直接播放，超过则分段）
         const MAX_LENGTH = 30;
 
@@ -323,15 +358,41 @@ const Avatar = {
         const MAX_LENGTH = 30;
         const chunks = [];
 
-        // 分段
-        for (let i = 0; i < text.length; i += MAX_LENGTH) {
-            chunks.push({
-                text: text.substring(i, i + MAX_LENGTH),
-                index: i
-            });
+        // 按句子边界分段，避免在句子中间断开
+        const sentences = this.splitIntoSentences(text);
+
+        let currentChunk = '';
+        sentences.forEach(sentence => {
+            if (currentChunk.length + sentence.length <= MAX_LENGTH) {
+                // 可以合并到当前段
+                currentChunk += sentence;
+            } else {
+                // 需要新开一段
+                if (currentChunk) {
+                    chunks.push({ text: currentChunk, index: chunks.length });
+                }
+
+                if (sentence.length > MAX_LENGTH) {
+                    // 单个句子太长，强制分段
+                    for (let i = 0; i < sentence.length; i += MAX_LENGTH) {
+                        chunks.push({
+                            text: sentence.substring(i, i + MAX_LENGTH),
+                            index: chunks.length
+                        });
+                    }
+                    currentChunk = '';
+                } else {
+                    currentChunk = sentence;
+                }
+            }
+        });
+
+        // 添加最后一段
+        if (currentChunk) {
+            chunks.push({ text: currentChunk, index: chunks.length });
         }
 
-        console.log(`加入队列: ${chunks.length}段`);
+        console.log(`📝 加入队列: ${chunks.length}段 (原文${text.length}字, 分成${sentences.length}句)`);
 
         // 加入队列
         this.speakQueue.push({
@@ -340,23 +401,63 @@ const Avatar = {
             currentChunk: 0
         });
 
-        // 如果没有在播放，开始播放
-        if (!this.isPlayingQueue) {
-            this.playNextInQueue();
+        // 设置队列播放状态
+        this.isPlayingQueue = true;
+        console.log('✅ isPlayingQueue 已设置为 true，队列数:', this.speakQueue.length);
+
+        // 直接开始播放
+        this.playNextInQueue();
+    },
+
+    /**
+     * 将文本按句子分割
+     */
+    splitIntoSentences(text) {
+        // 按标点符号分割，但保留标点
+        const sentences = [];
+        let current = '';
+
+        for (let i = 0; i < text.length; i++) {
+            const char = text[i];
+            current += char;
+
+            // 句子结束标记
+            if (['。', '！', '？', '.', '!', '?', '\n'].includes(char)) {
+                sentences.push(current);
+                current = '';
+            } else if (['，', '；', ',', ';', '：', ':'].includes(char)) {
+                // 逗号等也可以作为分段点（如果句子太长）
+                // 这里先不分割，让后续逻辑处理
+            }
         }
+
+        // 处理最后一段
+        if (current) {
+            sentences.push(current);
+        }
+
+        // 如果没有分割出任何句子，返回原文
+        if (sentences.length === 0) {
+            return [text];
+        }
+
+        return sentences;
     },
 
     /**
      * 播放下一段
      */
     async playNextInQueue() {
-        console.log('playNextInQueue被调用, 队列数量:', this.speakQueue.length);
+        console.log('═══════════════════════════════════');
+        console.log('📋 playNextInQueue被调用');
+        console.log('队列数量:', this.speakQueue.length);
+        console.log('isPlayingQueue:', this.isPlayingQueue);
 
         // 找到第一个未完成的队列
         let queueIndex = -1;
         for (let i = 0; i < this.speakQueue.length; i++) {
             const queue = this.speakQueue[i];
-            console.log(`队列${i}: currentChunk=${queue.currentChunk}, totalChunks=${queue.totalChunks}`);
+            console.log(`队列${i}: currentChunk=${queue.currentChunk}/${queue.totalChunks}`);
 
             if (queue.currentChunk < queue.totalChunks) {
                 queueIndex = i;
@@ -365,26 +466,34 @@ const Avatar = {
         }
 
         if (queueIndex === -1) {
-            console.log('所有队列播放完成');
+            console.log('✅ 所有队列播放完成');
             this.isPlayingQueue = false;
             this.speakQueue = [];
             UI.hideSubtitle();
+            // 播放完成后切换到listen状态，准备下一次对话
+            setTimeout(() => {
+                if (this.sdk && this.currentState !== 'listen') {
+                    this.sdk.listen();
+                }
+            }, 500);
+            console.log('═══════════════════════════════════');
             return;
         }
 
         const queue = this.speakQueue[queueIndex];
         const chunk = queue.chunks[queue.currentChunk];
 
-        console.log(`播放第${queue.currentChunk + 1}/${queue.totalChunks}段: "${chunk.text}"`);
+        console.log(`🎵 播放第${queue.currentChunk + 1}/${queue.totalChunks}段`);
+        console.log(`内容: "${chunk.text}"`);
 
         // 显示字幕
         UI.showSubtitle(chunk.text, queue.currentChunk, queue.totalChunks);
 
-        // 如果不是第一段，先切换到listen状态
+        // 如果不是第一段，先切换到listen状态并等待更长时间
         if (queue.currentChunk > 0) {
             console.log('切换到listen状态准备播放下一段');
             this.sdk.listen();
-            await this.sleep(300);
+            await this.sleep(600); // 等待状态切换
         }
 
         // 播放当前段
@@ -392,10 +501,11 @@ const Avatar = {
 
         // 更新计数
         queue.currentChunk++;
-        console.log('计数已更新:', queue.currentChunk);
+        console.log(`✅ 计数已更新: ${queue.currentChunk}/${queue.totalChunks}`);
+        console.log('═══════════════════════════════════');
 
         // 注意：不要在这里调用playNextInQueue()
-        // 下一段会在SDK的onVoiceStateChange回调中触发
+        // 下一段会在SDK的onVoiceStateChange回调中触发，或超时机制触发
     },
 
     /**
@@ -407,22 +517,54 @@ const Avatar = {
                 text: text.substring(0, 30) + (text.length > 30 ? '...' : ''),
                 textLength: text.length,
                 isStart: isStart,
-                isEnd: isEnd
+                isEnd: isEnd,
+                currentState: this.currentState
             });
 
             // 在speak之前先切换到listen状态，确保上一次讲话已结束
             if (this.sdk && this.currentState !== 'listen') {
-                console.log('切换到listen状态准备说话');
+                console.log('切换到listen状态准备说话，当前状态:', this.currentState);
                 this.sdk.listen();
-                // 等待状态切换完成
-                await this.sleep(300);
+                // 等待状态切换完成，增加到500ms
+                await this.sleep(500);
+                console.log('等待完成，准备speak');
             }
 
             // 调用speak方法
             this.sdk.speak(text, isStart, isEnd);
             this.currentState = 'speak';
+            console.log('✅ speak已调用');
+
+            // 如果是队列播放，设置超时检查以防回调没触发
+            if (this.isPlayingQueue && this.speakQueue.length > 0) {
+                const queueIndex = this.speakQueue.findIndex(q => q.currentChunk < q.totalChunks);
+                if (queueIndex >= 0) {
+                    const queue = this.speakQueue[queueIndex];
+                    const isLastChunk = queue.currentChunk >= queue.totalChunks - 1;
+
+                    if (!isLastChunk) {
+                        // 非最后一段，设置超时保险
+                        const estimatedTime = Math.max(text.length * 150, 3000); // 估计播放时间
+                        console.log(`⏱️ 设置超时检查: ${estimatedTime}ms (队列${queueIndex}, 第${queue.currentChunk + 1}段)`);
+
+                        const currentChunkIndex = queue.currentChunk;
+                        setTimeout(() => {
+                            // 检查是否还在播放队列，且当前段还没播放完成
+                            if (this.isPlayingQueue && this.speakQueue.length > queueIndex) {
+                                const currentQueue = this.speakQueue[queueIndex];
+                                if (currentQueue && currentQueue.currentChunk <= currentChunkIndex) {
+                                    console.warn('⚠️ 检测到播放可能卡住，强制播放下一段');
+                                    this.playNextInQueue();
+                                }
+                            }
+                        }, estimatedTime + 2000); // 额外2秒缓冲
+                    } else {
+                        console.log('这是最后一段，不设置超时检查');
+                    }
+                }
+            }
         } catch (error) {
-            console.error('speak调用失败:', error);
+            console.error('❌ speak调用失败:', error);
         }
     },
 
@@ -561,6 +703,84 @@ const Avatar = {
      */
     sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
+    },
+
+    /**
+     * 文本预处理：将数字和字母转换为中文发音
+     */
+    preprocessText(text) {
+        if (!text) return '';
+
+        let processed = text;
+
+        // 处理数字：将独立的数字转换为中文
+        // 策略：匹配前后都是非数字字符的数字，或开头/结尾的数字
+        // 不转换：数学表达式中的数字（如 2x, x^2, =4 等）
+        processed = processed.replace(/(?<![a-zA-Z0-9=+\-*/^])\d+(?![a-zA-Z0-9=+\-*/^])/g, (match) => {
+            return this.convertNumberToChinese(match);
+        });
+
+        // 处理单个字母：只转换独立的单个字母（不处理英文单词）
+        // 独立字母的定义：前后都是非字母字符，或开头/结尾
+        processed = processed.replace(/(?<![a-zA-Z])[a-zA-Z](?![a-zA-Z])/g, (match) => {
+            return this.letterToChinese[match] || match;
+        });
+
+        // 特殊处理：常见数学变量不转换
+        const mathVars = ['x', 'y', 'z', 'a', 'b', 'c', 'n', 'm', 'k'];
+        mathVars.forEach(v => {
+            // 将中文变量名还原为英文（如：西=2中的"西"可能是x）
+            // 这里我们需要更智能的处理
+        });
+
+        console.log('文本预处理:', {
+            原文: text.substring(0, 50) + (text.length > 50 ? '...' : ''),
+            处理后: processed.substring(0, 50) + (processed.length > 50 ? '...' : '')
+        });
+
+        return processed;
+    },
+
+    /**
+     * 将数字转换为中文
+     */
+    convertNumberToChinese(numStr) {
+        const num = parseInt(numStr);
+
+        // 如果在映射表中直接返回
+        if (this.numberToChinese[numStr]) {
+            return this.numberToChinese[numStr];
+        }
+
+        // 处理更大的数字
+        if (num < 10) {
+            return this.numberToChinese[numStr];
+        } else if (num < 20) {
+            return '十' + (num > 10 ? this.numberToChinese[String(num - 10)] : '');
+        } else if (num < 100) {
+            const tens = Math.floor(num / 10);
+            const units = num % 10;
+            return this.numberToChinese[String(tens * 10)] + (units > 0 ? this.numberToChinese[String(units)] : '');
+        } else if (num < 1000) {
+            const hundreds = Math.floor(num / 100);
+            const remainder = num % 100;
+            let result = this.numberToChinese[String(hundreds)] + '百';
+            if (remainder > 0) {
+                result += this.convertNumberToChinese(String(remainder));
+            }
+            return result;
+        } else if (num < 10000) {
+            const thousands = Math.floor(num / 1000);
+            const remainder = num % 1000;
+            let result = this.convertNumberToChinese(String(thousands)) + '千';
+            if (remainder > 0) {
+                result += this.convertNumberToChinese(String(remainder));
+            }
+            return result;
+        }
+
+        // 对于非常大的数字，返回原文
+        return numStr;
     },
 
     /**
