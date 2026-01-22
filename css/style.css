@@ -101,10 +101,10 @@ body {
 /* ========== 主体容器 ========== */
 .main-container {
     max-width: 1600px;
-    margin: 24px auto;
-    padding: 0 24px 24px;
+    margin: 20px auto;
+    padding: 0 20px 20px;
     display: grid;
-    grid-template-columns: 450px 1fr;
+    grid-template-columns: 480px 1fr;
     gap: 20px;
     height: calc(100vh - 140px);
     max-height: calc(100vh - 140px);
@@ -114,7 +114,7 @@ body {
 .avatar-section {
     background: var(--bg-white);
     border-radius: 16px;
-    padding: 16px;
+    padding: 18px;
     box-shadow: var(--shadow-lg);
     display: flex;
     flex-direction: column;
@@ -127,8 +127,8 @@ body {
     border-radius: 12px;
     overflow: hidden;
     position: relative;
-    min-height: 350px;
-    max-height: 450px;
+    min-height: 360px;
+    max-height: 480px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -253,8 +253,8 @@ body {
 }
 
 .avatar-info {
-    margin-top: 12px;
-    padding-top: 12px;
+    margin-top: 14px;
+    padding-top: 14px;
     border-top: 1px solid var(--border-color);
     text-align: center;
 }
@@ -274,7 +274,7 @@ body {
 .chat-section {
     background: var(--bg-white);
     border-radius: 16px;
-    padding: 16px;
+    padding: 18px;
     box-shadow: var(--shadow-lg);
     display: flex;
     flex-direction: column;
@@ -286,16 +286,16 @@ body {
 .selector-section {
     background: linear-gradient(135deg, #f0f5ff 0%, #e6f7ff 100%);
     border-radius: 12px;
-    padding: 12px 16px;
-    margin-bottom: 16px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
     border: 1px solid #bae7ff;
 }
 
 .selector-row {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 10px;
+    gap: 14px;
+    margin-bottom: 12px;
 }
 
 .selector-row:last-child {
@@ -306,28 +306,29 @@ body {
     font-size: 13px;
     font-weight: 600;
     color: var(--text-primary);
-    min-width: 60px;
+    min-width: 50px;
 }
 
 /* 紧凑型场景按钮 */
 .scenario-buttons-compact {
     display: flex;
-    gap: 8px;
+    gap: 10px;
     flex: 1;
 }
 
 .scenario-btn-compact {
     flex: 1;
-    padding: 8px 12px;
+    padding: 10px 14px;
     border: 2px solid var(--border-color);
     background: var(--bg-white);
     border-radius: 8px;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 500;
     transition: all 0.3s;
     color: var(--text-secondary);
     white-space: nowrap;
+    text-align: center;
 }
 
 .scenario-btn-compact:hover {
@@ -340,27 +341,29 @@ body {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border-color: transparent;
     color: var(--bg-white);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
 /* 紧凑型学科按钮 */
 .subject-buttons-compact {
     display: flex;
-    gap: 8px;
+    gap: 10px;
     flex: 1;
 }
 
 .subject-btn-compact {
     flex: 1;
-    padding: 8px 12px;
+    padding: 10px 14px;
     border: 2px solid var(--border-color);
     background: var(--bg-white);
     border-radius: 8px;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 500;
     transition: all 0.3s;
     color: var(--text-secondary);
     white-space: nowrap;
+    text-align: center;
 }
 
 .subject-btn-compact:hover {
@@ -372,6 +375,7 @@ body {
     background: var(--primary-color);
     border-color: var(--primary-color);
     color: var(--bg-white);
+    box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3);
 }
 
 /* 学科选择器（保留旧样式兼容） */
@@ -415,10 +419,10 @@ body {
 .chat-messages {
     flex: 1;
     overflow-y: auto;
-    padding: 16px;
+    padding: 14px 16px;
     background: var(--bg-light);
     border-radius: 12px;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
     min-height: 0;
 }
 
@@ -517,16 +521,13 @@ body {
     border-radius: 8px;
 }
 
-/* 快捷区域合并 */
+/* 快捷区域 */
 .quick-section {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
 }
 
 .quick-questions-compact {
-    padding: 8px 10px;
+    padding: 10px 14px;
     background: #f0f5ff;
     border-radius: 8px;
     border: 1px solid #d6e4ff;
@@ -537,23 +538,23 @@ body {
     font-size: 12px;
     font-weight: 600;
     color: var(--text-secondary);
-    margin-bottom: 8px;
+    margin-bottom: 10px;
 }
 
 .quick-buttons {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 8px;
 }
 
 .quick-btn {
-    padding: 6px 12px;
+    padding: 8px 14px;
     background: var(--bg-white);
     border: 1px solid var(--primary-color);
     color: var(--primary-color);
     border-radius: 6px;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 13px;
     transition: all 0.3s;
 }
 
@@ -586,21 +587,21 @@ body {
 /* 输入区域 */
 .chat-input-area {
     display: flex;
-    gap: 12px;
+    gap: 10px;
     margin-top: auto;
 }
 
 .chat-input {
     flex: 1;
-    padding: 10px 14px;
+    padding: 12px 16px;
     border: 2px solid var(--border-color);
     border-radius: 8px;
     font-size: 14px;
     font-family: inherit;
     resize: none;
     transition: border-color 0.3s;
-    min-height: 44px;
-    max-height: 80px;
+    min-height: 48px;
+    max-height: 100px;
 }
 
 .chat-input:focus {
@@ -609,7 +610,7 @@ body {
 }
 
 .send-btn {
-    padding: 10px 24px;
+    padding: 12px 28px;
     background: var(--primary-color);
     color: var(--bg-white);
     border: none;
@@ -618,7 +619,8 @@ body {
     font-size: 14px;
     font-weight: 500;
     transition: background 0.3s;
-    min-height: 44px;
+    min-height: 48px;
+    white-space: nowrap;
 }
 
 .send-btn:hover {
@@ -975,8 +977,8 @@ body {
 /* Agent 面板 */
 .agent-panel {
     background: var(--bg-white);
-    border-radius: 12px;
-    margin-top: 12px;
+    border-radius: 10px;
+    margin-top: 10px;
     box-shadow: var(--shadow);
     overflow: hidden;
     flex-shrink: 0;
@@ -986,13 +988,13 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 12px;
+    padding: 6px 10px;
     background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     border-bottom: 1px solid var(--border-color);
 }
 
 .agent-panel-title {
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 600;
     color: var(--text-primary);
 }
@@ -1002,8 +1004,8 @@ body {
     border: none;
     color: var(--text-secondary);
     cursor: pointer;
-    font-size: 12px;
-    padding: 4px 12px;
+    font-size: 11px;
+    padding: 3px 8px;
     border-radius: 4px;
     transition: all 0.3s;
 }
@@ -1013,7 +1015,7 @@ body {
 }
 
 .agent-panel-content {
-    padding: 10px;
+    padding: 8px;
     transition: all 0.3s ease;
 }
 
@@ -1025,13 +1027,13 @@ body {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     gap: 6px;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 .agent-card {
     background: var(--bg-light);
-    border-radius: 8px;
-    padding: 8px 4px;
+    border-radius: 6px;
+    padding: 6px 4px;
     text-align: center;
     border: 2px solid transparent;
     transition: all 0.3s;
@@ -1053,19 +1055,19 @@ body {
 }
 
 .agent-icon {
-    font-size: 24px;
+    font-size: 20px;
     margin-bottom: 4px;
 }
 
 .agent-name {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
     color: var(--text-primary);
     margin-bottom: 2px;
 }
 
 .agent-status {
-    font-size: 10px;
+    font-size: 9px;
     color: var(--text-light);
 }
 
@@ -1076,9 +1078,9 @@ body {
 
 .agent-log {
     background: #1e1e1e;
-    border-radius: 8px;
-    padding: 8px;
-    max-height: 80px;
+    border-radius: 6px;
+    padding: 6px 8px;
+    max-height: 70px;
     overflow-y: auto;
     font-family: 'Consolas', 'Monaco', monospace;
     font-size: 9px;
@@ -1086,7 +1088,7 @@ body {
 
 .log-entry {
     color: #a9b7c6;
-    padding: 4px 0;
+    padding: 3px 0;
     border-bottom: 1px solid #2c2c2c;
 }
 

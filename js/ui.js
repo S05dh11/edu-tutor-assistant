@@ -280,23 +280,6 @@ const UI = {
 
         // 根据连接状态更新按钮禁用状态
         this.updateQuickQuestionsState();
-
-        // 绑定测试按钮事件
-        ['test-1', 'test-2', 'test-3', 'test-4'].forEach(id => {
-            const btn = document.getElementById(id);
-            if (btn) {
-                btn.addEventListener('click', () => {
-                    // 检查是否已连接
-                    if (!Avatar.isConnected()) {
-                        this.showError('请先连接AI老师');
-                        return;
-                    }
-                    const text = btn.getAttribute('data-text');
-                    console.log('测试语音:', text);
-                    Avatar.speak(text, true, true);
-                });
-            }
-        });
     },
 
     /**
@@ -305,19 +288,9 @@ const UI = {
     updateQuickQuestionsState() {
         const isConnected = Avatar.isConnected();
         const allQuickBtns = this.elements.quickButtons.querySelectorAll('.quick-btn');
-        const allTestBtns = ['test-1', 'test-2', 'test-3', 'test-4']
-            .map(id => document.getElementById(id))
-            .filter(btn => btn !== null);
 
         // 更新快捷问题按钮
         allQuickBtns.forEach(btn => {
-            btn.disabled = !isConnected;
-            btn.style.opacity = isConnected ? '1' : '0.5';
-            btn.style.cursor = isConnected ? 'pointer' : 'not-allowed';
-        });
-
-        // 更新测试按钮
-        allTestBtns.forEach(btn => {
             btn.disabled = !isConnected;
             btn.style.opacity = isConnected ? '1' : '0.5';
             btn.style.cursor = isConnected ? 'pointer' : 'not-allowed';
@@ -530,6 +503,8 @@ const UI = {
     clearMessages() {
         if (confirm('确定要清空所有对话记录吗？')) {
             this.elements.chatMessages.innerHTML = '';
+            // 清空AI对话历史
+            AI.clearHistory();
         }
     },
 

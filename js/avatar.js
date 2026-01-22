@@ -48,6 +48,72 @@ const Avatar = {
         'Z': '资'
     },
 
+    // 符号转中文映射
+    symbolToChinese: {
+        '+': '加',
+        '-': '减',
+        '×': '乘',
+        '÷': '除',
+        '*': '乘',
+        '/': '除',
+        '=': '等于',
+        '≠': '不等于',
+        '≈': '约等于',
+        '<': '小于',
+        '>': '大于',
+        '≤': '小于等于',
+        '≥': '大于等于',
+        '.': '点',
+        ',': '逗号',
+        '?': '问号',
+        '!': '感叹号',
+        ':': '冒号',
+        ';': '分号',
+        '(': '左括号',
+        ')': '右括号',
+        '[': '左方括号',
+        ']': '右方括号',
+        '{': '左花括号',
+        '}': '右花括号',
+        '%': '百分之',
+        '‰': '千分之',
+        '^': '的',
+        '√': '根号',
+        '∞': '无穷大',
+        'π': '派',
+        '°': '度',
+        '′': '分',
+        '″': '秒',
+        '∠': '角',
+        '△': '三角形',
+        '⊙': '圆',
+        '∥': '平行于',
+        '⊥': '垂直于',
+        '∵': '因为',
+        '∴': '所以',
+        '→': '趋向于',
+        '≡': '恒等于',
+        '∫': '积分',
+        '∂': '偏导数',
+        '∑': '求和',
+        '∏': '求积',
+        '∪': '并集',
+        '∩': '交集',
+        '∈': '属于',
+        '∉': '不属于',
+        '⊂': '包含于',
+        '⊃': '包含',
+        '∅': '空集',
+        '∀': '任意',
+        '∃': '存在',
+        '∧': '且',
+        '∨': '或',
+        '¬': '非',
+        '⇒': '推出',
+        '⇔': '等价于',
+        '°C': '摄氏度'
+    },
+
     /**
      * 诊断检查
      */
@@ -170,7 +236,7 @@ const Avatar = {
                             setTimeout(() => {
                                 console.log('⏭️ 调用playNextInQueue...');
                                 this.playNextInQueue();
-                            }, 1000); // 增加延迟到1000ms
+                            }, 200); // 缩短延迟到200ms
                         } else {
                             console.log('队列为空或未在播放队列');
                         }
@@ -493,7 +559,7 @@ const Avatar = {
         if (queue.currentChunk > 0) {
             console.log('切换到listen状态准备播放下一段');
             this.sdk.listen();
-            await this.sleep(600); // 等待状态切换
+            await this.sleep(200); // 等待状态切换，缩短到200ms
         }
 
         // 播放当前段
@@ -525,8 +591,8 @@ const Avatar = {
             if (this.sdk && this.currentState !== 'listen') {
                 console.log('切换到listen状态准备说话，当前状态:', this.currentState);
                 this.sdk.listen();
-                // 等待状态切换完成，增加到500ms
-                await this.sleep(500);
+                // 等待状态切换完成，缩短到200ms
+                await this.sleep(200);
                 console.log('等待完成，准备speak');
             }
 
@@ -706,16 +772,22 @@ const Avatar = {
     },
 
     /**
-     * 文本预处理：将数字和字母转换为中文发音
+     * 文本预处理：将数字、字母和符号转换为中文发音
      */
     preprocessText(text) {
         if (!text) return '';
 
         let processed = text;
 
+        // 先处理符号（避免符号被其他处理影响）
+        // 转换常见符号为中文
+        Object.keys(this.symbolToChinese).forEach(symbol => {
+            const regex = new RegExp(this.escapeRegExp(symbol), 'g');
+            processed = processed.replace(regex, this.symbolToChinese[symbol]);
+        });
+
         // 处理数字：将独立的数字转换为中文
         // 策略：匹配前后都是非数字字符的数字，或开头/结尾的数字
-        // 不转换：数学表达式中的数字（如 2x, x^2, =4 等）
         processed = processed.replace(/(?<![a-zA-Z0-9=+\-*/^])\d+(?![a-zA-Z0-9=+\-*/^])/g, (match) => {
             return this.convertNumberToChinese(match);
         });
@@ -726,19 +798,19 @@ const Avatar = {
             return this.letterToChinese[match] || match;
         });
 
-        // 特殊处理：常见数学变量不转换
-        const mathVars = ['x', 'y', 'z', 'a', 'b', 'c', 'n', 'm', 'k'];
-        mathVars.forEach(v => {
-            // 将中文变量名还原为英文（如：西=2中的"西"可能是x）
-            // 这里我们需要更智能的处理
-        });
-
         console.log('文本预处理:', {
             原文: text.substring(0, 50) + (text.length > 50 ? '...' : ''),
             处理后: processed.substring(0, 50) + (processed.length > 50 ? '...' : '')
         });
 
         return processed;
+    },
+
+    /**
+     * 转义正则表达式特殊字符
+     */
+    escapeRegExp(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     },
 
     /**

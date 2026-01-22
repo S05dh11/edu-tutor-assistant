@@ -16,6 +16,10 @@ const AI = {
     // AI模式：basic（基础模式）| agent（Multi-Agent模式）
     useAgentMode: true,
 
+    // 对话历史（保留最近10轮对话）
+    conversationHistory: [],
+    maxHistory: 10,
+
     // 学科对应的系统提示词
     SUBJECT_PROMPTS: {
         math: `你是数学辅导老师小理。
@@ -166,12 +170,10 @@ const AI = {
                 apiKey,
                 // onProgress - 处理Agent进度
                 (progress) => {
+                    // Agent状态更新只显示在Agent面板，不在对话框显示
                     if (progress.agent && progress.status === 'active') {
-                        // Agent开始工作 - 只显示在UI，不朗读
-                        if (onMessage) {
-                            const agentInfo = AgentSystem.getAgentInfo(progress.agent);
-                            onMessage(`[系统: ${agentInfo.icon} ${agentInfo.name}正在工作...]`, true);
-                        }
+                        // Agent开始工作 - 只更新Agent面板，不在对话框显示
+                        // 状态由AgentSystem内部更新UI
                     } else if (progress.status === 'streaming' && progress.content) {
                         // 生成Agent流式输出
                         if (onMessage) {
@@ -218,21 +220,31 @@ const AI = {
     async callLLM(userMessage, systemPrompt, apiKey, callbacks) {
         const { onMessage, onComplete, onError } = callbacks;
 
+        // 构建消息数组：系统提示词 + 对话历史 + 当前消息
+        const messages = [
+            {
+                role: 'system',
+                content: systemPrompt
+            }
+        ];
+
+        // 添加对话历史
+        this.conversationHistory.forEach(msg => {
+            messages.push(msg);
+        });
+
+        // 添加当前用户消息
+        messages.push({
+            role: 'user',
+            content: userMessage
+        });
+
         const requestData = {
             model: 'Qwen/Qwen2.5-7B-Instruct',
-            messages: [
-                {
-                    role: 'system',
-                    content: systemPrompt
-                },
-                {
-                    role: 'user',
-                    content: userMessage
-                }
-            ],
+            messages: messages,
             stream: true,
-            temperature: 0.7,
-            top_p: 0.9,
+            temperature: 0.95,  // 提高随机性，确保每次出题不同
+            top_p: 0.95,
             max_tokens: 800
         };
 
@@ -260,6 +272,9 @@ const AI = {
                 const { done, value } = await reader.read();
 
                 if (done) {
+                    // 保存对话到历史
+                    this.addToHistory(userMessage, fullResponse);
+
                     if (onComplete) {
                         onComplete(fullResponse);
                     }
@@ -382,5 +397,43 @@ const AI = {
      */
     getQuickQuestions() {
         return this.QUICK_QUESTIONS[this.currentSubject] || this.QUICK_QUESTIONS.math;
+    },
+
+    /**
+     * 添加对话到历史记录
+     */
+    addToHistory(userMessage, assistantMessage) {
+        // 添加用户消息和助手回复
+        this.conversationHistory.push({
+            role: 'user',
+            content: userMessage
+        });
+        this.conversationHistory.push({
+            role: 'assistant',
+            content: assistantMessage
+        });
+
+        // 限制历史记录数量（保留最近N轮对话，每轮2条消息）
+        const maxMessages = this.maxHistory * 2;
+        if (this.conversationHistory.length > maxMessages) {
+            this.conversationHistory = this.conversationHistory.slice(-maxMessages);
+        }
+
+        console.log('对话历史更新，当前消息数:', this.conversationHistory.length);
+    },
+
+    /**
+     * 清空对话历史
+     */
+    clearHistory() {
+        this.conversationHistory = [];
+        console.log('对话历史已清空');
+    },
+
+    /**
+     * 获取对话历史
+     */
+    getHistory() {
+        return this.conversationHistory;
     }
 };
