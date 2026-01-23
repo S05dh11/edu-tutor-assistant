@@ -819,7 +819,18 @@ const Avatar = {
 
         let processed = text;
 
-        // 先处理符号（避免符号被其他处理影响）
+        // 先清理markdown格式符号（避免被读出来）
+        processed = processed.replace(/\*\*\*/g, ''); // ***加粗斜体
+        processed = processed.replace(/\*\*/g, '');  // **加粗**
+        processed = processed.replace(/\*/g, '');    // *斜体*
+        processed = processed.replace(/___/g, '');   // ___加粗斜体
+        processed = processed.replace(/__/g, '');    // __加粗__
+        processed = processed.replace(/_/g, '');     // _斜体_
+        processed = processed.replace(/~~/g, '');    // ~~删除线~~
+        processed = processed.replace(/`/g, '');     // `代码`
+        processed = processed.replace(/#{1,6}\s/g, ''); // # 标题
+
+        // 处理符号（避免符号被其他处理影响）
         // 转换常见符号为中文
         Object.keys(this.symbolToChinese).forEach(symbol => {
             const regex = new RegExp(this.escapeRegExp(symbol), 'g');
