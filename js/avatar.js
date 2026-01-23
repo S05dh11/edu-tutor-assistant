@@ -232,11 +232,11 @@ const Avatar = {
                     if (status === 'end') {
                         console.log('✅ 收到语音结束事件，准备播放下一段');
                         if (this.isPlayingQueue && this.speakQueue.length > 0) {
-                            // 延迟再播放下一段，确保完全播放完成
+                            // 几乎立即播放下一段，极短延迟确保完全播放完成
                             setTimeout(() => {
                                 console.log('⏭️ 调用playNextInQueue...');
                                 this.playNextInQueue();
-                            }, 200); // 缩短延迟到200ms
+                            }, 10); // 缩短延迟到10ms
                         } else {
                             console.log('队列为空或未在播放队列');
                         }
@@ -403,8 +403,8 @@ const Avatar = {
             return;
         }
 
-        // 文本长度限制（30字以内直接播放，超过则分段）
-        const MAX_LENGTH = 30;
+        // 文本长度限制（50字以内直接播放，超过则分段）
+        const MAX_LENGTH = 50;
 
         if (text.length <= MAX_LENGTH) {
             // 短文本，直接播放
@@ -421,10 +421,10 @@ const Avatar = {
      * 将文本加入播放队列
      */
     enqueueSpeak(text) {
-        const MAX_LENGTH = 30;
+        const MAX_LENGTH = 50;
         const chunks = [];
 
-        // 按句子边界分段，避免在句子中间断开
+        // 按句子边界分段，优先在句子结束处分段
         const sentences = this.splitIntoSentences(text);
 
         let currentChunk = '';
@@ -435,17 +435,16 @@ const Avatar = {
             } else {
                 // 需要新开一段
                 if (currentChunk) {
-                    chunks.push({ text: currentChunk, index: chunks.length });
+                    chunks.push({ text: currentChunk.trim(), index: chunks.length });
                 }
 
                 if (sentence.length > MAX_LENGTH) {
-                    // 单个句子太长，强制分段
-                    for (let i = 0; i < sentence.length; i += MAX_LENGTH) {
-                        chunks.push({
-                            text: sentence.substring(i, i + MAX_LENGTH),
-                            index: chunks.length
-                        });
-                    }
+                    // 单个句子太长，在逗号等处尝试分割
+                    const subChunks = this.splitLongSentence(sentence, MAX_LENGTH);
+                    chunks.push(...subChunks.map((s, i) => ({
+                        text: s.trim(),
+                        index: chunks.length + i
+                    })));
                     currentChunk = '';
                 } else {
                     currentChunk = sentence;
@@ -455,7 +454,7 @@ const Avatar = {
 
         // 添加最后一段
         if (currentChunk) {
-            chunks.push({ text: currentChunk, index: chunks.length });
+            chunks.push({ text: currentChunk.trim(), index: chunks.length });
         }
 
         console.log(`📝 加入队列: ${chunks.length}段 (原文${text.length}字, 分成${sentences.length}句)`);
@@ -487,13 +486,19 @@ const Avatar = {
             const char = text[i];
             current += char;
 
-            // 句子结束标记
+            // 句子结束标记 - 优先在这里分段
             if (['。', '！', '？', '.', '!', '?', '\n'].includes(char)) {
                 sentences.push(current);
                 current = '';
-            } else if (['，', '；', ',', ';', '：', ':'].includes(char)) {
-                // 逗号等也可以作为分段点（如果句子太长）
-                // 这里先不分割，让后续逻辑处理
+            } else if (['，', '；', ',', ';'].includes(char)) {
+                // 逗号和分号也可以作为分段点
+                // 为了更好的断句，在这里也分割
+                sentences.push(current);
+                current = '';
+            } else if (['：', ':'].includes(char)) {
+                // 冒号后也适合分段
+                sentences.push(current);
+                current = '';
             }
         }
 
@@ -508,6 +513,40 @@ const Avatar = {
         }
 
         return sentences;
+    },
+
+    /**
+     * 分割过长的句子（在标点处分割）
+     */
+    splitLongSentence(sentence, maxLength) {
+        const chunks = [];
+        let current = '';
+
+        for (let i = 0; i < sentence.length; i++) {
+            const char = sentence[i];
+            current += char;
+
+            // 在标点处检查是否需要分段
+            if (['，', ',', '、', '；', ';'].includes(char)) {
+                if (current.length >= maxLength * 0.7) {
+                    // 已达到约70%长度，在这里分段
+                    chunks.push(current);
+                    current = '';
+                }
+            }
+
+            // 强制分段检查
+            if (current.length >= maxLength) {
+                chunks.push(current);
+                current = '';
+            }
+        }
+
+        if (current) {
+            chunks.push(current);
+        }
+
+        return chunks.length > 0 ? chunks : [sentence];
     },
 
     /**
@@ -555,11 +594,11 @@ const Avatar = {
         // 显示字幕
         UI.showSubtitle(chunk.text, queue.currentChunk, queue.totalChunks);
 
-        // 如果不是第一段，先切换到listen状态并等待更长时间
+        // 如果不是第一段，先切换到listen状态并等待更短时间
         if (queue.currentChunk > 0) {
             console.log('切换到listen状态准备播放下一段');
             this.sdk.listen();
-            await this.sleep(200); // 等待状态切换，缩短到200ms
+            await this.sleep(50); // 大幅缩短等待时间到50ms
         }
 
         // 播放当前段
@@ -591,8 +630,8 @@ const Avatar = {
             if (this.sdk && this.currentState !== 'listen') {
                 console.log('切换到listen状态准备说话，当前状态:', this.currentState);
                 this.sdk.listen();
-                // 等待状态切换完成，缩短到200ms
-                await this.sleep(200);
+                // 等待状态切换完成，缩短到50ms
+                await this.sleep(50);
                 console.log('等待完成，准备speak');
             }
 
@@ -772,7 +811,8 @@ const Avatar = {
     },
 
     /**
-     * 文本预处理：将数字、字母和符号转换为中文发音
+     * 文本预处理：将数字和符号转换为中文发音
+     * 注意：英文字母保持原样，让SDK按英文读音朗读
      */
     preprocessText(text) {
         if (!text) return '';
@@ -792,11 +832,8 @@ const Avatar = {
             return this.convertNumberToChinese(match);
         });
 
-        // 处理单个字母：只转换独立的单个字母（不处理英文单词）
-        // 独立字母的定义：前后都是非字母字符，或开头/结尾
-        processed = processed.replace(/(?<![a-zA-Z])[a-zA-Z](?![a-zA-Z])/g, (match) => {
-            return this.letterToChinese[match] || match;
-        });
+        // 英文字母保持原样，让数字人SDK按英文读音朗读
+        // 不再转换字母为中文拼音
 
         console.log('文本预处理:', {
             原文: text.substring(0, 50) + (text.length > 50 ? '...' : ''),

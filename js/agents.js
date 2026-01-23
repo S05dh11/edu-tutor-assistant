@@ -423,39 +423,55 @@ const AgentSystem = {
     validateAnswer(answer, context) {
         let score = 100;
         let issues = [];
+        let praises = [];
 
-        // 长度检查
-        if (answer.length < 10) {
-            score -= 20;
-            issues.push('回答过短');
-        }
-        if (answer.length > 150) {
-            score -= 10;
-            issues.push('回答过长');
+        // 长度检查 - 鼓励详细回答
+        if (answer.length < 30) {
+            score -= 30;
+            issues.push('回答过短，需要更详细的解释');
+        } else if (answer.length >= 100) {
+            praises.push('回答详细充分');
         }
 
-        // 内容检查
+        // 内容检查 - 鼓励确定性
         if (answer.includes('不确定') || answer.includes('可能')) {
             score -= 15;
-            issues.push('答案不确定');
+            issues.push('答案不够确定');
+        } else {
+            praises.push('回答确定准确');
         }
 
         // 复杂度检查
-        if (context.complexity === 'complex' && answer.length < 30) {
-            score -= 20;
+        if (context.complexity === 'complex' && answer.length < 80) {
+            score -= 25;
             issues.push('复杂问题回答不够详细');
+        } else if (context.complexity === 'complex' && answer.length >= 100) {
+            praises.push('复杂问题解答详细');
         }
 
-        // 知识库使用检查
+        // 知识库使用检查 - 鼓励利用知识库
         if (context.hasKnowledge && !this.usesKnowledgeBase(answer)) {
-            score -= 10;
+            score -= 15;
             issues.push('未充分利用知识库');
+        } else if (context.hasKnowledge) {
+            praises.push('有效利用知识库');
+        }
+
+        // 结构检查 - 鼓励有结构的回答
+        if (answer.includes('①') || answer.includes('1.') || answer.includes('步骤') || answer.includes('首先')) {
+            praises.push('回答结构清晰');
+        }
+
+        // 示例检查 - 鼓励举例说明
+        if (answer.includes('例如') || answer.includes('举例') || answer.includes('比如')) {
+            praises.push('提供示例说明');
         }
 
         return {
             score: Math.max(0, score),
             passed: score >= 60,
-            issues: issues
+            issues: issues,
+            praises: praises
         };
     },
 
@@ -463,8 +479,8 @@ const AgentSystem = {
      * 检查是否使用了知识库内容
      */
     usesKnowledgeBase(answer) {
-        // 简单检查：答案是否包含具体的内容元素
-        return answer.length > 20 && (answer.includes('：') || answer.includes('-') || answer.includes('。'));
+        // 检查是否包含具体的内容元素
+        return answer.length > 30 && (answer.includes('：') || answer.includes('-') || answer.includes('。') || answer.includes('①'));
     },
 
     /**
