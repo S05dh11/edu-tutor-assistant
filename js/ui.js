@@ -472,6 +472,9 @@ const UI = {
         messageDiv.appendChild(contentDiv);
         this.elements.chatMessages.appendChild(messageDiv);
 
+        // 渲染数学公式
+        this.renderMathInElement(contentDiv);
+
         // 滚动到底部
         this.scrollToBottom();
 
@@ -484,17 +487,97 @@ const UI = {
     updateMessage(element, content) {
         const contentDiv = element.querySelector('.message-content');
         if (contentDiv) {
+            // 调试：输出原始内容
+            console.log('AI原始回复:', content);
+            console.log('是否包含$符号:', content.includes('$'));
             contentDiv.innerHTML = this.formatMessage(content);
+            console.log('格式化后HTML:', contentDiv.innerHTML);
+            // 渲染数学公式
+            this.renderMathInElement(contentDiv);
             this.scrollToBottom();
         }
     },
 
     /**
      * 格式化消息内容
+     * 处理换行和数学公式渲染
      */
     formatMessage(content) {
-        // 简单的换行处理
-        return content.replace(/\n/g, '<br>');
+        if (!content) return '';
+
+        let formatted = content;
+
+        // 第一步：保护公式内容，用临时占位符替换
+        // 使用特殊的占位符，避免与markdown冲突
+        const formulaPlaceholders = [];
+        const formulaRegex = /\$\$[\s\S]*?\$\$|\$[^$\n]+?\$|\\\[[\s\S]*?\\\]|\\\([^)]+?\\\)/g;
+        formatted = formatted.replace(formulaRegex, (match) => {
+            const placeholder = `___KATEX_FORMULA_${formulaPlaceholders.length}___`;
+            formulaPlaceholders.push(match);
+            return placeholder;
+        });
+
+        // 第二步：处理markdown格式（在HTML转义之前）
+        // 加粗 **text**（注意：不处理 __text__ 避免与占位符冲突）
+        formatted = formatted.replace(/\*\*\*([^*]+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+        formatted = formatted.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
+        // 斜体 *text*（注意：不处理 _text_ 避免与占位符冲突）
+        formatted = formatted.replace(/\*([^*]+?)\*/g, '<em>$1</em>');
+        // 删除线 ~~text~~
+        formatted = formatted.replace(/~~([^~]+?)~~/g, '<del>$1</del>');
+
+        // 第三步：处理换行
+        formatted = formatted.replace(/\n/g, '<br>');
+
+        // 第四步：HTML转义（不影响公式占位符和已有的HTML标签）
+        // 只转义非HTML标签的内容
+        formatted = formatted.replace(/&(?!amp;|lt;|gt;|quot;)/g, '&amp;');
+        // 注意：这里不转义 < 和 >，因为可能破坏已有的HTML标签
+
+        // 第五步：恢复公式占位符
+        formulaPlaceholders.forEach((formula, index) => {
+            formatted = formatted.replace(`___KATEX_FORMULA_${index}___`, formula);
+        });
+
+        console.log('formatMessage处理结果:', formatted.substring(0, 200));
+        return formatted;
+    },
+
+    /**
+     * 渲染消息中的数学公式
+     * 在消息添加到DOM后调用
+     */
+    renderMathInElement(element) {
+        console.log('renderMathInElement调用, typeof renderMathInElement:', typeof renderMathInElement);
+        console.log('元素内容:', element.innerHTML.substring(0, 200));
+
+        if (!element) {
+            console.error('元素为空');
+            return;
+        }
+
+        if (typeof renderMathInElement === 'undefined') {
+            console.error('KaTeX renderMathInElement未定义！检查KaTeX是否正确加载');
+            return;
+        }
+
+        try {
+            renderMathInElement(element, {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '$', right: '$', display: false},
+                    {left: '\\[', right: '\\]', display: true},
+                    {left: '\\(', right: '\\)', display: false}
+                ],
+                throwOnError: false,
+                errorColor: '#cc0000',
+                strict: false,
+                trust: false
+            });
+            console.log('KaTeX渲染完成');
+        } catch (error) {
+            console.warn('KaTeX渲染错误:', error);
+        }
     },
 
     /**

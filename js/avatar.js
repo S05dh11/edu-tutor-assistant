@@ -819,7 +819,73 @@ const Avatar = {
 
         let processed = text;
 
-        // 先清理markdown格式符号（避免被读出来）
+        console.log('preprocessText输入:', processed);
+
+        // 先清理LaTeX公式符号（用于语音朗读）
+        // 处理独立公式 $$...$$ - 去除并转换为可读文本
+        processed = processed.replace(/\$\$([\s\S]*?)\$\$/g, (match, content) => {
+            console.log('发现独立公式:', match, '内容:', content);
+            // 去除$符号，返回内容用于朗读
+            return content;
+        });
+
+        // 处理行内公式 $...$ - 去除$符号，保留内容
+        processed = processed.replace(/\$([^\$]+?)\$/g, (match, content) => {
+            console.log('发现行内公式:', match, '内容:', content);
+            return content;
+        });
+
+        // 处理LaTeX标准格式 \(...\)
+        processed = processed.replace(/\\\(([^)]+?)\\\)/g, (match, content) => {
+            console.log('发现LaTeX行内公式:', match, '内容:', content);
+            return content;
+        });
+
+        // 清理LaTeX命令（转换为可读文本）
+        const latexReplacements = {
+            '\\triangle': '三角形',
+            '\\angle': '角',
+            '\\circ': '度',
+            '\\sqrt': '根号',
+            '\\frac': '分数',
+            '\\sum': '求和',
+            '\\prod': '求积',
+            '\\int': '积分',
+            '\\infty': '无穷大',
+            '\\pi': '派',
+            '\\alpha': '阿尔法',
+            '\\beta': '贝塔',
+            '\\gamma': '伽马',
+            '\\delta': '德尔塔',
+            '\\theta': '西塔',
+            '\\lambda': '兰姆达',
+            '\\mu': '谬',
+            '\\sigma': '西格玛',
+            '\\phi': '斐',
+            '\\omega': '欧米伽',
+            '\\rightarrow': '箭头',
+            '\\Rightarrow': '推出',
+            '\\Leftrightarrow': '等价于',
+            '\\leq': '小于等于',
+            '\\geq': '大于等于',
+            '\\neq': '不等于',
+            '\\approx': '约等于',
+            '\\pm': '正负',
+            '\\times': '乘以',
+            '\\div': '除以',
+            '\\cdot': '点乘'
+        };
+
+        // 替换LaTeX命令
+        Object.keys(latexReplacements).forEach(cmd => {
+            const regex = new RegExp(this.escapeRegExp(cmd), 'g');
+            processed = processed.replace(regex, latexReplacements[cmd]);
+        });
+
+        // 清理其他LaTeX反斜杠命令
+        processed = processed.replace(/\\[a-zA-Z]+/g, '');
+
+        // 清理markdown格式符号（避免被读出来）
         processed = processed.replace(/\*\*\*/g, ''); // ***加粗斜体
         processed = processed.replace(/\*\*/g, '');  // **加粗**
         processed = processed.replace(/\*/g, '');    // *斜体*
